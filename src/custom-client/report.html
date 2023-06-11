@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+    crossorigin="anonymous">
+
+  <!-- Form.io CSS -->
+  <link rel="stylesheet" href="https://cdn.form.io/formiojs/formio.form.min.css" crossorigin="anonymous">
+
+  <!-- Custom CSS -->
+  <link href="custom.css" rel="stylesheet">
+
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.form.io/formiojs/formio.form.min.js" crossorigin="anonymous"></script>
+  <script type='text/javascript'>
+    window.onload = function ()
+    {
+      Formio.createForm(document.getElementById('formio'), 'https://forms.eastasia.cloudapp.azure.com/report-form');
+    };
+  </script>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" href="#">Report Viewer</a>
+  </nav>
+  <div class="container">
+    <div id="formio"></div>
+  </div>
+</body>
+
+</html>

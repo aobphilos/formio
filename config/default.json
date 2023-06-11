@@ -1,10 +1,10 @@
 {
   "port": 3001,
   "appPort": 8080,
-  "host": "http://forms.eastasia.cloudapp.azure.com",
-  "protocol": "http",
+  "host": "https://forms.eastasia.cloudapp.azure.com",
+  "protocol": "https",
   "allowedOrigins": ["*"],
-  "domain": "http://forms.eastasia.cloudapp.azure.com",
+  "domain": "https://forms.eastasia.cloudapp.azure.com",
   "basePath": "",
   "mongo": "mongodb://localhost:27017/formioapp",
   "mongoConfig": "",

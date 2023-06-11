@@ -1,0 +1,27 @@
+/* Custom.css */
+
+body {
+  background-color: #ffffff; /* White */
+  font-family: "Roboto", sans-serif; /* Modern sans-serif font */
+  color: #333333; /* Dark grey text */
+}
+
+.navbar {
+  background-color: #333333; /* Dark grey */
+  color: #ffffff; /* White text */
+}
+
+.navbar a {
+  color: #ffffff; /* White text */
+}
+
+.btn-primary {
+  background-color: #333333; /* Dark grey */
+  border-color: #333333; /* Dark grey */
+  color: #ffffff; /* White text */
+}
+
+.card {
+  background-color: #f7f7f7; /* Light grey */
+  border-color: #eaeaea; /* Lighter grey */
+}

@@ -1,43 +1,47 @@
-'use strict';
-require('@azure/ms-rest-nodeauth');
+"use strict";
+require("@azure/ms-rest-nodeauth");
 
-const mongoose = require('mongoose');
-const ObjectID = require('mongodb').ObjectId;
-const _ = require('lodash');
-const nodeUrl = require('url');
-const deleteProp = require('delete-property').default;
-const workerUtils = require('formio-workers/workers/util');
-const errorCodes = require('./error-codes.js');
-const fetch = require('@formio/node-fetch-http-proxy');
-const {VM} = require('vm2');
+const mongoose = require("mongoose");
+const ObjectID = require("mongodb").ObjectId;
+const _ = require("lodash");
+const nodeUrl = require("url");
+const deleteProp = require("delete-property").default;
+const workerUtils = require("formio-workers/workers/util");
+const errorCodes = require("./error-codes.js");
+const fetch = require("@formio/node-fetch-http-proxy");
+const { VM } = require("vm2");
 const debug = {
-  idToBson: require('debug')('formio:util:idToBson'),
-  getUrlParams: require('debug')('formio:util:getUrlParams'),
-  removeProtectedFields: require('debug')('formio:util:removeProtectedFields')
+  idToBson: require("debug")("formio:util:idToBson"),
+  getUrlParams: require("debug")("formio:util:getUrlParams"),
+  removeProtectedFields: require("debug")("formio:util:removeProtectedFields"),
 };
 
 // Define a few global noop placeholder shims and import the component classes
-global.Text              = class {};
-global.HTMLElement       = class {};
+global.Text = class {};
+global.HTMLElement = class {};
 global.HTMLCanvasElement = class {};
-global.navigator         = {userAgent: ''};
-global.document          = {
+global.navigator = { userAgent: "" };
+global.document = {
   createElement: () => ({}),
-  cookie: '',
+  cookie: "",
   getElementsByTagName: () => [],
   documentElement: {
     style: [],
-    firstElementChild: {appendChild: () => {}}
-  }
+    firstElementChild: { appendChild: () => {} },
+  },
 };
-global.window            = {addEventListener: () => {}, Event: function() {}, navigator: global.navigator};
+global.window = {
+  addEventListener: () => {},
+  Event: function () {},
+  navigator: global.navigator,
+};
 global.btoa = (str) => {
-  return (str instanceof Buffer) ?
-    str.toString('base64') :
-    Buffer.from(str.toString(), 'binary').toString('base64');
+  return str instanceof Buffer
+    ? str.toString("base64")
+    : Buffer.from(str.toString(), "binary").toString("base64");
 };
 global.self = global;
-const Formio = require('formiojs/formio.form.js');
+const Formio = require("formiojs/formio.form.js");
 global.Formio = Formio.Formio;
 
 // Remove onChange events from all renderer displays.
@@ -50,20 +54,21 @@ const vm = new VM({
   sandbox: {
     result: null,
   },
-  fixAsync: true
+  fixAsync: true,
 });
 
 Formio.Utils.Evaluator.noeval = true;
-Formio.Utils.Evaluator.evaluator = function(func, args) {
-  return function() {
+Formio.Utils.Evaluator.evaluator = function (func, args) {
+  return function () {
     let result = null;
     /* eslint-disable no-empty */
     try {
-      vm.freeze(args, 'args');
+      vm.freeze(args, "args");
 
-      result = vm.run(`result = (function({${_.keys(args).join(',')}}) {${func}})(args);`);
-    }
-    catch (err) {}
+      result = vm.run(
+        `result = (function({${_.keys(args).join(",")}}) {${func}})(args);`
+      );
+    } catch (err) {}
     /* eslint-enable no-empty */
     return result;
   };
@@ -96,12 +101,11 @@ const Utils = {
    * @return {boolean}
    */
   isBoolean(value) {
-    if (typeof value === 'boolean') {
+    if (typeof value === "boolean") {
       return true;
-    }
-    else if (typeof value === 'string') {
+    } else if (typeof value === "string") {
       value = value.toLowerCase();
-      return (value === 'true') || (value === 'false');
+      return value === "true" || value === "false";
     }
     return false;
   },
@@ -112,11 +116,11 @@ const Utils = {
    * @return {boolean}
    */
   boolean(value) {
-    if (typeof value === 'boolean') {
+    if (typeof value === "boolean") {
       return value;
     }
-    if (typeof value === 'string') {
-      return (value.toLowerCase() === 'true');
+    if (typeof value === "string") {
+      return value.toLowerCase() === "true";
     }
     return !!value;
   },
@@ -138,16 +142,16 @@ const Utils = {
    */
   getAlias(req, reservedForms) {
     /* eslint-disable no-useless-escape */
-    const formsRegEx = new RegExp(`\/(${reservedForms.join('|')}).*`, 'i');
+    const formsRegEx = new RegExp(`\/(${reservedForms.join("|")}).*`, "i");
     /* eslint-enable no-useless-escape */
-    const alias = req.url.substr(1).replace(formsRegEx, '');
+    const alias = req.url.substr(1).replace(formsRegEx, "");
     let additional = req.url.substr(alias.length + 1);
-    if (!additional && req.method === 'POST') {
-      additional = '/submission';
+    if (!additional && req.method === "POST") {
+      additional = "/submission";
     }
     return {
       alias: alias,
-      additional: additional
+      additional: additional,
     };
   },
 
@@ -183,7 +187,7 @@ const Utils = {
       status: (status) => {
         subResponse.statusCode = status;
         return subResponse;
-      }
+      },
     };
     return subResponse;
   },
@@ -334,20 +338,18 @@ const Utils = {
    */
   ObjectId(id) {
     try {
-      return _.isObject(id)
-        ? id
-        : mongoose.Types.ObjectId(id);
-    }
-    catch (e) {
+      return _.isObject(id) ? id : mongoose.Types.ObjectId(id);
+    } catch (e) {
       return id;
     }
   },
 
-  flattenComponentsForRender: workerUtils.flattenComponentsForRender.bind(workerUtils),
+  flattenComponentsForRender:
+    workerUtils.flattenComponentsForRender.bind(workerUtils),
   renderFormSubmission: workerUtils.renderFormSubmission.bind(workerUtils),
   renderComponentValue: workerUtils.renderComponentValue.bind(workerUtils),
 
-/**
+  /**
    * Search the request headers for the given key.
    *
    * @param req
@@ -359,7 +361,7 @@ const Utils = {
    *   The header value if found or false.
    */
   getHeader(req, key) {
-    if (typeof req.headers[key] !== 'undefined') {
+    if (typeof req.headers[key] !== "undefined") {
       return req.headers[key];
     }
 
@@ -378,7 +380,7 @@ const Utils = {
    *   The query value if found or false.
    */
   getQuery(req, key) {
-    if (typeof req.query[key] !== 'undefined') {
+    if (typeof req.query[key] !== "undefined") {
       return req.query[key];
     }
 
@@ -397,7 +399,7 @@ const Utils = {
    *   The parameter value if found or false.
    */
   getParameter(req, key) {
-    if (typeof req.params[key] !== 'undefined') {
+    if (typeof req.params[key] !== "undefined") {
       return req.params[key];
     }
 
@@ -454,15 +456,15 @@ const Utils = {
       return urlParams;
     }
     const parsed = nodeUrl.parse(url);
-    let parts = parsed.pathname.split('/');
+    let parts = parsed.pathname.split("/");
     debug.getUrlParams(parsed);
 
     // Remove element originating from first slash.
     parts = _.tail(parts);
 
     // Url is not symmetric, add an empty value for the last key.
-    if ((parts.length % 2) !== 0) {
-      parts.push('');
+    if (parts.length % 2 !== 0) {
+      parts.push("");
     }
 
     // Build key/value list.
@@ -484,7 +486,7 @@ const Utils = {
    *   The submission key
    */
   getSubmissionKey(key) {
-    return key.replace(/\./g, '.data.');
+    return key.replace(/\./g, ".data.");
   },
 
   /**
@@ -497,7 +499,7 @@ const Utils = {
    *   The form component key
    */
   getFormComponentKey(key) {
-    return key.replace(/\.data\./g, '.');
+    return key.replace(/\.data\./g, ".");
   },
 
   /**
@@ -521,11 +523,8 @@ const Utils = {
    */
   idToBson(_id) {
     try {
-      _id = _.isObject(_id)
-        ? _id
-        : mongoose.Types.ObjectId(_id);
-    }
-    catch (e) {
+      _id = _.isObject(_id) ? _id : mongoose.Types.ObjectId(_id);
+    } catch (e) {
       debug.idToBson(`Unknown _id given: ${_id}, typeof: ${typeof _id}`);
     }
 
@@ -542,17 +541,15 @@ const Utils = {
    *   The mongo string id.
    */
   idToString(_id) {
-    return _.isObject(_id)
-      ? _id.toString()
-      : _id;
+    return _.isObject(_id) ? _id.toString() : _id;
   },
   toMongoId(id) {
-    id = id || '';
-    let str = '';
+    id = id || "";
+    let str = "";
     for (let i = 0; i < id.length; i++) {
       str += id[i].charCodeAt(0).toString(16);
     }
-    return _.padEnd(str.substr(0, 24), 24, '0');
+    return _.padEnd(str.substr(0, 24), 24, "0");
   },
 
   /**
@@ -570,20 +567,15 @@ const Utils = {
         return;
       }
       if (_.isArray(value)) {
-        changed = value.reduce((subchanged, row) => {
-          return Utils.ensureIds(row) || subchanged;
-        }, false) || changed;
-      }
-      else if (_.isObject(value)) {
+        changed =
+          value.reduce((subchanged, row) => {
+            return Utils.ensureIds(row) || subchanged;
+          }, false) || changed;
+      } else if (_.isObject(value)) {
         changed = Utils.ensureIds(value) || changed;
-      }
-      else if (
-        (
-          (key === '_id') ||
-          (key === 'form') ||
-          (key === 'owner')
-        ) &&
-        (typeof value === 'string') &&
+      } else if (
+        (key === "_id" || key === "form" || key === "owner") &&
+        typeof value === "string" &&
         ObjectID.isValid(value)
       ) {
         const bsonId = Utils.idToBson(value);
@@ -605,33 +597,43 @@ const Utils = {
     const modifyFields = [];
 
     // Iterate through all components.
-    this.eachComponent(form.components, (component, path) => {
-      path = `data.${path}`;
-      if (component.protected) {
-        debug.removeProtectedFields('Removing protected field:', component.key);
-        modifyFields.push(deleteProp(path));
-      }
-      else if ((component.type === 'signature') && (action === 'index') && !doNotMinify) {
-        modifyFields.push(((submission) => {
-          const data = _.get(submission, path);
-          _.set(submission, path, (!data || (data.length < 25)) ? '' : 'YES');
-        }));
-      }
-      else if (component.type === 'file' && action === 'index' && !doNotMinify) {
-        modifyFields.push(((submission) => {
-          const data = _.map(
-            _.get(submission, path),
-            (file) => {
-              if (file && file.url && file.url.startsWith('data:')) {
-                return _.omit(file, 'url');
+    this.eachComponent(
+      form.components,
+      (component, path) => {
+        path = `data.${path}`;
+        if (component.protected) {
+          debug.removeProtectedFields(
+            "Removing protected field:",
+            component.key
+          );
+          modifyFields.push(deleteProp(path));
+        } else if (
+          component.type === "signature" &&
+          action === "index" &&
+          !doNotMinify
+        ) {
+          modifyFields.push((submission) => {
+            const data = _.get(submission, path);
+            _.set(submission, path, !data || data.length < 25 ? "" : "YES");
+          });
+        } else if (
+          component.type === "file" &&
+          action === "index" &&
+          !doNotMinify
+        ) {
+          modifyFields.push((submission) => {
+            const data = _.map(_.get(submission, path), (file) => {
+              if (file && file.url && file.url.startsWith("data:")) {
+                return _.omit(file, "url");
               }
               return file;
-            }
-          );
-          _.set(submission, path, data);
-        }));
-      }
-    }, true);
+            });
+            _.set(submission, path, data);
+          });
+        }
+      },
+      true
+    );
 
     // Iterate through each submission once.
     submissions.forEach((submission) =>
@@ -651,7 +653,7 @@ const Utils = {
      *   The base64 representation of the given data.
      */
     encode(decoded) {
-      return new Buffer.from(decoded.toString()).toString('base64');
+      return new Buffer.from(decoded.toString()).toString("base64");
     },
     /**
      * Base64 decode the given data.
@@ -663,8 +665,8 @@ const Utils = {
      *   The ascii representation of the given encoded data.
      */
     decode(encoded) {
-      return new Buffer.from(encoded.toString()).toString('ascii');
-    }
+      return new Buffer.from(encoded.toString()).toString("ascii");
+    },
   },
   /* eslint-enable new-cap */
 
@@ -679,51 +681,56 @@ const Utils = {
    */
   uniqueMachineName(document, model, next) {
     var query = {
-      machineName: {$regex: `^${document.machineName}[0-9]*$`},
-      deleted: {$eq: null}
+      machineName: { $regex: `^${document.machineName}[0-9]*$` },
+      deleted: { $eq: null },
     };
     if (document._id) {
-      query._id = {$ne: document._id};
+      query._id = { $ne: document._id };
     }
 
-    model.find(query).lean().exec((err, records) => {
-      if (err) {
-        return next(err);
-      }
-
-      if (!records || !records.length) {
-        return next();
-      }
-
-      let i = 0;
-      records.forEach((record) => {
-        const parts = record.machineName.split(/(\d+)$/).filter(Boolean);
-        const number = parseInt(parts[1], 10) || 0;
-        if (number > i) {
-          i = number;
+    model
+      .find(query)
+      .lean()
+      .exec((err, records) => {
+        if (err) {
+          return next(err);
         }
+
+        if (!records || !records.length) {
+          return next();
+        }
+
+        let i = 0;
+        records.forEach((record) => {
+          const parts = record.machineName.split(/(\d+)$/).filter(Boolean);
+          const number = parseInt(parts[1], 10) || 0;
+          if (number > i) {
+            i = number;
+          }
+        });
+        document.machineName += ++i;
+        next();
       });
-      document.machineName += ++i;
-      next();
-    });
   },
 
   castValue(valueType, value) {
     switch (valueType) {
-      case 'string':
+      case "string":
         return value.toString();
-      case 'number':
+      case "number":
         return Number(value);
-      case 'boolean':
-        return value === 'true';
-      case '[number]':
-        return value.replace(/(^,)|(,$)/g, '')
-                         .split(',')
-                         .map(val => Number(val));
-      case '[string]':
-        return value.replace(/(^,)|(,$)/g, '')
-                         .split(',')
-                         .map(val => val.toString());
+      case "boolean":
+        return value === "true";
+      case "[number]":
+        return value
+          .replace(/(^,)|(,$)/g, "")
+          .split(",")
+          .map((val) => Number(val));
+      case "[string]":
+        return value
+          .replace(/(^,)|(,$)/g, "")
+          .split(",")
+          .map((val) => val.toString());
     }
   },
 
@@ -733,30 +740,22 @@ const Utils = {
   errorCodes,
 
   valuePath(prefix, key) {
-    return `${prefix ? `${prefix}.` : ''}${key}`;
+    return `${prefix ? `${prefix}.` : ""}${key}`;
   },
 
-  layoutComponents: [
-    'panel',
-    'table',
-    'well',
-    'columns',
-    'fieldset',
-    'tabs',
-  ],
+  layoutComponents: ["panel", "table", "well", "columns", "fieldset", "tabs"],
 
-  eachValue(
-    components,
-    data,
-    fn,
-    context,
-    path = '',
-  ) {
+  eachValue(components, data, fn, context, path = "") {
     components.forEach((component) => {
       if (component) {
         if (Array.isArray(component.components)) {
           // If tree type is an array of objects like datagrid and editgrid.
-          if (['datagrid', 'editgrid', 'dynamicWizard'].includes(component.type) || component.arrayTree) {
+          if (
+            ["datagrid", "editgrid", "dynamicWizard"].includes(
+              component.type
+            ) ||
+            component.arrayTree
+          ) {
             const value = _.get(data, component.key) || [];
             if (Array.isArray(value)) {
               value.forEach((row, index) => {
@@ -765,69 +764,43 @@ const Utils = {
                   row,
                   fn,
                   context,
-                  this.valuePath(path, `${component.key}[${index}]`),
+                  this.valuePath(path, `${component.key}[${index}]`)
                 );
               });
             }
-          }
-          else if (['form'].includes(component.type)) {
+          } else if (["form"].includes(component.type)) {
             this.eachValue(
               component.components,
               _.get(data, `${component.key}.data`, {}),
               fn,
               context,
-              this.valuePath(path, `${component.key}.data`),
+              this.valuePath(path, `${component.key}.data`)
             );
-          }
-          else if (
-            ['container'].includes(component.type) ||
-            (
-              component.tree &&
-              !this.layoutComponents.includes(component.type)
-            )
+          } else if (
+            ["container"].includes(component.type) ||
+            (component.tree && !this.layoutComponents.includes(component.type))
           ) {
             this.eachValue(
               component.components,
               _.get(data, component.key),
               fn,
               context,
-              this.valuePath(path, component.key),
+              this.valuePath(path, component.key)
             );
+          } else {
+            this.eachValue(component.components, data, fn, context, path);
           }
-          else {
-            this.eachValue(
-              component.components,
-              data,
-              fn,
-              context,
-              path,
-            );
-          }
-        }
-        else if (Array.isArray(component.columns)) {
+        } else if (Array.isArray(component.columns)) {
           // Handle column like layout components.
           component.columns.forEach((column) => {
-            this.eachValue(
-              column.components,
-              data,
-              fn,
-              context,
-              path,
-            );
+            this.eachValue(column.components, data, fn, context, path);
           });
-        }
-        else if (Array.isArray(component.rows)) {
+        } else if (Array.isArray(component.rows)) {
           // Handle table like layout components.
           component.rows.forEach((row) => {
             if (Array.isArray(row)) {
               row.forEach((column) => {
-                this.eachValue(
-                  column.components,
-                  data,
-                  fn,
-                  context,
-                  path,
-                );
+                this.eachValue(column.components, data, fn, context, path);
               });
             }
           });
@@ -843,8 +816,8 @@ const Utils = {
       });
     });
   },
-  markModifiedParameters: (item, modifiedParameters)=>{
-    modifiedParameters.map((parameter)=>{
+  markModifiedParameters: (item, modifiedParameters) => {
+    modifiedParameters.map((parameter) => {
       if (item[parameter]) {
         item.markModified(parameter);
       }

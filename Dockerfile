@@ -50,3 +50,5 @@ ENV DEBUG=""
 # This will initialize the application based on
 # some questions to the user (login email, password, etc.)
 ENTRYPOINT [ "node", "main" ]
+
+EXPOSE 3001

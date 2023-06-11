@@ -1,11 +1,11 @@
-'use strict';
+"use strict";
 
-const jwt = require('jsonwebtoken');
-const _ = require('lodash');
-const util = require('../util/util');
+const jwt = require("jsonwebtoken");
+const _ = require("lodash");
+const util = require("../util/util");
 const debug = {
-  error: require('debug')('formio:error'),
-  handler: require('debug')('formio:middleware:tokenHandler'),
+  error: require("debug")("formio:error"),
+  handler: require("debug")("formio:middleware:tokenHandler"),
 };
 
 /**
@@ -21,11 +21,9 @@ const debug = {
  */
 module.exports = (router) => {
   // Load the form.io hooks.
-  const hook = require('../util/hook')(router.formio);
-  const formioCache = require('../cache/cache')(router);
-  const {
-    jwt: jwtConfig,
-  } = router.formio.config;
+  const hook = require("../util/hook")(router.formio);
+  const formioCache = require("../cache/cache")(router);
+  const { jwt: jwtConfig } = router.formio.config;
 
   /**
    * Util function to update the jwt in the response.
@@ -37,15 +35,16 @@ module.exports = (router) => {
   const generateToken = (inputToken, payload, res) => {
     // Refresh the token that is sent back to the user when appropriate.
     const newToken = router.formio.auth.getToken(payload);
-    res.token = newToken
-      ? newToken
-      : inputToken;
+    res.token = newToken ? newToken : inputToken;
 
     // Set the headers if they haven't been sent yet.
     if (!res.headersSent) {
-      const headers = router.formio.hook.alter('accessControlExposeHeaders', 'x-jwt-token');
-      res.setHeader('Access-Control-Expose-Headers', headers);
-      res.setHeader('x-jwt-token', res.token);
+      const headers = router.formio.hook.alter(
+        "accessControlExposeHeaders",
+        "x-jwt-token"
+      );
+      res.setHeader("Access-Control-Expose-Headers", headers);
+      res.setHeader("x-jwt-token", res.token);
     }
   };
 
@@ -59,7 +58,7 @@ module.exports = (router) => {
    * @param next
    */
   const userHandler = (req, res, decoded, token, user, next) => {
-    hook.alter('user', user, (err, user) => {
+    hook.alter("user", user, (err, user) => {
       if (err) {
         return next();
       }
@@ -68,17 +67,22 @@ module.exports = (router) => {
       req.user = user;
 
       // Store the jwt token sent by the user.
-      if (decoded.user._id === 'external') {
-        decoded.user._id = util.toMongoId(decoded.user.data.id || decoded.user.data._id ||decoded.user.data.email || JSON.stringify(decoded.user.data));
+      if (decoded.user._id === "external") {
+        decoded.user._id = util.toMongoId(
+          decoded.user.data.id ||
+            decoded.user.data._id ||
+            decoded.user.data.email ||
+            JSON.stringify(decoded.user.data)
+        );
       }
       req.token = decoded;
 
       // Refresh the token that is sent back to the user when appropriate.
       req.tokenIssued = Math.trunc(Date.now() / 1000);
       generateToken(token, decoded, res, req);
-      router.formio.log('Token', req, 'Using normal token');
+      router.formio.log("Token", req, "Using normal token");
       if (req.user) {
-        router.formio.log('User', req, req.user._id);
+        router.formio.log("User", req, req.user._id);
       }
       next();
     });
@@ -91,26 +95,28 @@ module.exports = (router) => {
       return next();
     }
 
-    const token = util.getRequestValue(req, 'x-jwt-token');
+    const token = util.getRequestValue(req, "x-jwt-token");
     const noToken = () => {
-      router.formio.log('Token', req, 'No token found');
+      router.formio.log("Token", req, "No token found");
       // Try the request with no tokens.
-      delete req.headers['x-jwt-token'];
+      delete req.headers["x-jwt-token"];
       req.user = null;
       req.token = null;
       res.token = null;
-      router.formio.audit('AUTH_ANONYMOUS', req);
+      router.formio.audit("AUTH_ANONYMOUS", req);
       return next();
     };
 
-    const apiKey = req.headers['x-token'];
+    const apiKey = req.headers["x-token"];
     if (apiKey) {
       const apiKeys = process.env.API_KEYS
-        ? process.env.API_KEYS.split(',').map((key) => key.trim()).filter(Boolean)
+        ? process.env.API_KEYS.split(",")
+            .map((key) => key.trim())
+            .filter(Boolean)
         : [];
 
       if (apiKeys.includes(apiKey)) {
-        router.formio.audit('AUTH_APIKEY', req);
+        router.formio.audit("AUTH_APIKEY", req);
         req.isAdmin = true;
         req.permissionsChecked = true;
         req.user = null;
@@ -128,25 +134,23 @@ module.exports = (router) => {
     jwt.verify(token, jwtConfig.secret, (err, decoded) => {
       if (err || !decoded) {
         debug.handler(err || `Token could not decoded: ${token}`);
-        router.formio.audit('EAUTH_TOKENBAD', req, err);
-        router.formio.log('Token', req, 'Token could not be decoded');
+        router.formio.audit("EAUTH_TOKENBAD", req, err);
+        router.formio.log("Token", req, "Token could not be decoded");
 
         // If the token has expired, send a 440 error (Login Timeout)
-        if (err && (err.name === 'JsonWebTokenError')) {
-          router.formio.log('Token', req, 'Bad Token');
-          return res.status(400).send('Bad Token');
-        }
-        else if (err && (err.name === 'TokenExpiredError')) {
-          router.formio.audit('EAUTH_TOKENEXPIRED', req, err);
-          router.formio.log('Token', req, 'Token Expired');
-          return res.status(440).send('Token Expired');
-        }
-        else {
+        if (err && err.name === "JsonWebTokenError") {
+          router.formio.log("Token", req, "Bad Token");
+          return res.status(400).send("Bad Token");
+        } else if (err && err.name === "TokenExpiredError") {
+          router.formio.audit("EAUTH_TOKENEXPIRED", req, err);
+          router.formio.log("Token", req, "Token Expired");
+          return res.status(440).send("Token Expired");
+        } else {
           return noToken();
         }
       }
 
-      hook.alter('tokenDecode', decoded, req, (err, decoded) => {
+      hook.alter("tokenDecode", decoded, req, (err, decoded) => {
         // Check to see if this token is allowed to access this path.
         if (!router.formio.auth.isTokenAllowed(req, decoded)) {
           return noToken();
@@ -154,8 +158,8 @@ module.exports = (router) => {
 
         // If this is a temporary token, then decode it and set it in the request.
         if (decoded.temp) {
-          router.formio.log('Token', req, 'Using temp token');
-          debug.handler('Temp token');
+          router.formio.log("Token", req, "Using temp token");
+          debug.handler("Temp token");
           req.tempToken = decoded;
           req.user = null;
           req.token = null;
@@ -164,7 +168,7 @@ module.exports = (router) => {
         }
 
         // Allow external tokens.
-        if (!hook.alter('external', decoded, req)) {
+        if (!hook.alter("external", decoded, req)) {
           decoded.user.project = decoded.project._id;
           return userHandler(req, res, decoded, token, decoded.user, next);
         }
@@ -177,9 +181,9 @@ module.exports = (router) => {
         }
 
         if (decoded.isAdmin) {
-          router.formio.log('Token', req, 'User is admin');
+          router.formio.log("Token", req, "User is admin");
           if (req.user) {
-            router.formio.log('User', req, req.user._id);
+            router.formio.log("User", req, req.user._id);
           }
           req.permissionsChecked = true;
           req.isAdmin = true;
@@ -187,8 +191,8 @@ module.exports = (router) => {
           return next();
         }
 
-        const formId = _.get(decoded, 'form._id');
-        const userId = _.get(decoded, 'user._id');
+        const formId = _.get(decoded, "form._id");
+        const userId = _.get(decoded, "user._id");
 
         if (!formId || !userId) {
           return noToken();
@@ -200,28 +204,27 @@ module.exports = (router) => {
           if (err) {
             // Couldn't load the user, try to fail safely.
             user = decoded.user;
-          }
-          else if (!user) {
+          } else if (!user) {
             req.user = null;
             req.token = null;
             res.token = null;
             return next();
           }
 
-          hook.alter('validateToken', req, decoded, user, (err) => {
+          hook.alter("validateToken", req, decoded, user, (err) => {
             if (err) {
               return res.status(440).send(err);
             }
 
             // Check if the user has reset the password since the token was issued.
             if (
-              !req.skipTokensValidation
-              && user.metadata
-              && user.metadata.jwtIssuedAfter
-              && decoded.iat < user.metadata.jwtIssuedAfter
+              !req.skipTokensValidation &&
+              user.metadata &&
+              user.metadata.jwtIssuedAfter &&
+              decoded.iat < user.metadata.jwtIssuedAfter
             ) {
-              router.formio.log('Token', req, 'Token No Longer Valid');
-              return res.status(440).send('Token No Longer Valid');
+              router.formio.log("Token", req, "Token No Longer Valid");
+              return res.status(440).send("Token No Longer Valid");
             }
 
             // Call the user handler.
